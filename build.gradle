@@ -1,7 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
 }
 
 repositories {
@@ -9,9 +11,16 @@ repositories {
 }
 
 dependencies {
-    testImplementation "junit:junit:4.13.2"
+    testImplementation 'junit:junit:4.13.2'
 }
 
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions.jvmTarget = "17"
 }
+
+javafx {
+    version = '17'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+mainClassName = 'com.example.MainKt'
