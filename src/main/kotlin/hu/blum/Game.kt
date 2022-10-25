@@ -15,7 +15,8 @@ class Game: Application() {
         viewModel = GameViewModel()
         view = GameView(primaryStage, viewModel)
 
-        view.createWindow()
+        view.show()
+
     }
 
 

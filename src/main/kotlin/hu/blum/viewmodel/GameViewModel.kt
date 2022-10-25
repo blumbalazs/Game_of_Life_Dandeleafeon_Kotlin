@@ -2,11 +2,17 @@ package hu.blum.viewmodel
 
 import hu.blum.view.View
 import javafx.animation.AnimationTimer
-import java.util.Timer
+import java.util.*
 
 class GameViewModel {
     private val views:MutableList<View> = mutableListOf()
-    private  lateinit var timer: AnimationTimer
+    private var timer: Timer = Timer(true)
+    private val refresh: TimerTask = object: TimerTask() {
+        override fun run() {
+            step()
+        }
+    }
+
     fun addView(view:View){
         views.add(view)
     }
@@ -18,20 +24,11 @@ class GameViewModel {
     }
 
     fun start(){
-        timer.start()
+        timer.scheduleAtFixedRate(refresh,0,1000)
     }
 
     fun stop(){
-        timer.stop()
-    }
-
-    private fun createTimer(){
-        timer = object: AnimationTimer() {
-            override fun handle(now: Long) {
-                TODO("Not yet implemented")
-            }
-
-        }
+        timer.cancel()
     }
 
     private fun invalidateViews(){
