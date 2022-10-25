@@ -1,46 +1,27 @@
-package hu.bme.aut
+package hu.blum.view
 
-import hu.bme.aut.model.FieldModel
-import hu.bme.aut.render.Renderer
-import hu.bme.aut.render.StaticMovementRenderer
-import javafx.animation.AnimationTimer
-import javafx.application.Application
+import hu.blum.viewmodel.GameViewModel
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
-import javafx.scene.shape.Circle
 import javafx.stage.Stage
 import java.awt.Toolkit
 
-class Game: Application() {
+class GameView(val primaryStage: Stage,val viewModel: GameViewModel) :View{
 
     private val WIDTH:Number = Toolkit.getDefaultToolkit().screenSize.width
     private val HEIGHT:Number = Toolkit.getDefaultToolkit().screenSize.height
-    private val model: FieldModel = FieldModel()
 
-
-    private lateinit var renderer:Renderer
     private lateinit var graphicsContext: GraphicsContext
     private lateinit var mainScene: Scene
-    override fun start(primaryStage: Stage) {
-        createWindow(primaryStage)
 
-
-        renderer = StaticMovementRenderer(graphicsContext)
-
-        object: AnimationTimer(){
-            override fun handle(now: Long) {
-                renderer.tickAndRender(now)
-
-            }
-
-        }.start()
+    init {
+        viewModel.addView(this)
     }
 
-    fun createWindow(primaryStage: Stage){
+    fun createWindow(){
         primaryStage.title = "Game of Life"
-        //TODO("Canvas create")
         val root = Group()
         mainScene = Scene(root, WIDTH.toDouble(),HEIGHT.toDouble())
 
@@ -50,5 +31,9 @@ class Game: Application() {
 
         primaryStage.scene = mainScene
         primaryStage.show()
+    }
+
+    override fun invalidate(){
+
     }
 }

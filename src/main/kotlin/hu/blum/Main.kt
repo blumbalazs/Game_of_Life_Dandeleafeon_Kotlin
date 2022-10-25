@@ -1,4 +1,4 @@
-package hu.bme.aut
+package hu.blum
 
 import javafx.application.Application
 
