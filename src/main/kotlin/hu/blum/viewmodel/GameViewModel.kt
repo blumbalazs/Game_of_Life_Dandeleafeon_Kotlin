@@ -3,6 +3,7 @@ package hu.blum.viewmodel
 import hu.blum.model.Coordinate
 import hu.blum.model.Field
 import hu.blum.model.FieldType
+import hu.blum.model.FieldViewModel
 import hu.blum.view.View
 import java.util.*
 
@@ -19,12 +20,14 @@ class GameViewModel {
         }
     }
 
-    private var board: Array<Array<FieldType>> = Array(boardHeight){Array(boardWidth){ FieldType.DEAD_CELL } }
+    private var board: Array<Array<Field>> = Array(boardHeight){Array(boardWidth){ Field(FieldType.DEAD_CELL,0) } }
 
     init {
-        board[board.size/2][board[0].size/2] = FieldType.DANDELIFEON
-        board[1][1] = FieldType.LIVE_CELL
-        addBorderWallstoBoard(board)
+        board[board.size/2][board[0].size/2].type = FieldType.DANDELIFEON
+        board[2][1].type = FieldType.LIVE_CELL
+        board[2][2].type = FieldType.LIVE_CELL
+        board[2][3].type = FieldType.LIVE_CELL
+        addBorderWallsToBoard()
     }
 
     fun addView(view:View){
@@ -32,16 +35,16 @@ class GameViewModel {
     }
 
 
-    private fun addBorderWallstoBoard(board:Array<Array<FieldType>>){
+    private fun addBorderWallsToBoard(){
         for (y in board.indices){
-            board[y][0] = FieldType.WALL
-            board[y][board[y].size-1] = FieldType.WALL
+            board[y][0].type = FieldType.WALL
+            board[y][board[y].size-1].type = FieldType.WALL
         }
         for (x in board[0].indices){
-            board[0][x] = FieldType.WALL
+            board[0][x].type = FieldType.WALL
         }
         for (x in board[board.size-1].indices){
-            board[board.size-1][x] = FieldType.WALL
+            board[board.size-1][x].type = FieldType.WALL
         }
     }
     fun step(){
@@ -51,14 +54,71 @@ class GameViewModel {
         invalidateViews()
     }
     private fun cycle(){
-        val nextState:Array<Array<FieldType>> = Array(boardHeight){Array(boardWidth){ FieldType.DEAD_CELL } }
-        nextState[board.size/2][board[0].size/2] = FieldType.DANDELIFEON
+        val nextState:Array<Array<Field>> = Array(boardHeight){Array(boardWidth){Field(FieldType.DEAD_CELL,0) } }
 
         for (y in board.indices){
             for (x in board.indices){
-
+                nextState[y][x] = EvolveCell(Coordinate(x,y))
             }
         }
+        board = nextState
+    }
+    private fun EvolveCell(coordinate: Coordinate):Field{
+
+        val field:Field = board[coordinate.y][coordinate.x]
+
+        when(field.type){
+            FieldType.LIVE_CELL ->{
+                val liveNeighbours = numberofLiveNeighbours(coordinate)
+                if(2==liveNeighbours || liveNeighbours==3)
+                    field.increaseAge()
+                else
+                    return Field(FieldType.DEAD_CELL,0)
+                return field
+            }
+            FieldType.DEAD_CELL ->{
+                val liveNeighbours = numberofLiveNeighbours(coordinate)
+                if(3 == liveNeighbours)
+                    return Field(FieldType.LIVE_CELL,numberofLiveNeighbours(coordinate)+1)
+                return field
+            }
+
+            else -> return field
+        }
+    }
+    private fun numberofLiveNeighbours(coordinate: Coordinate):Int{
+        var n = 0
+
+        if(board[coordinate.y-1][coordinate.x+1].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y-1][coordinate.x].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y-1][coordinate.x-1].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y][coordinate.x-1].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y+1][coordinate.x-1].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y+1][coordinate.x].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y+1][coordinate.x+1].type == FieldType.LIVE_CELL)
+            n++
+        if(board[coordinate.y][coordinate.x+1].type == FieldType.LIVE_CELL)
+            n++
+
+        return n
+    }
+    private fun maxNeighbourAge(coordinate: Coordinate):Int{
+        var n = 0
+        n = Math.max(n,board[coordinate.y-1][coordinate.x+1].age)
+        n = Math.max(n,board[coordinate.y-1][coordinate.x].age)
+        n = Math.max(n,board[coordinate.y-1][coordinate.x-1].age)
+        n = Math.max(n,board[coordinate.y][coordinate.x-1].age)
+        n = Math.max(n,board[coordinate.y+1][coordinate.x-1].age)
+        n = Math.max(n,board[coordinate.y+1][coordinate.x].age)
+        n = Math.max(n,board[coordinate.y+1][coordinate.x+1].age)
+        n = Math.max(n,board[coordinate.y][coordinate.x+1].age)
+        return n
     }
 
     fun start(){
@@ -74,11 +134,11 @@ class GameViewModel {
             it.invalidate()
         }
     }
-    fun getBoardState():List<Field>{
-        val fields:MutableList<Field> = mutableListOf()
+    fun getBoardState():List<FieldViewModel>{
+        val fields:MutableList<FieldViewModel> = mutableListOf()
         for (y in board.indices){
             for (x in board[y].indices){
-                fields.add(Field(Coordinate(x,y),board[y][x]))
+                fields.add(FieldViewModel(Coordinate(x,y),board[y][x].type))
             }
         }
         return fields.toList()

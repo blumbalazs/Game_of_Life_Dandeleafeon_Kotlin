@@ -75,6 +75,7 @@ class GameView(private val primaryStage: Stage, private val viewModel: GameViewM
     }
 
     override fun invalidate(){
+        graphicsContext.clearRect(0.0,0.0,WIDTH.toDouble(),HEIGHT.toDouble())
         reDraw()
     }
 
@@ -117,7 +118,7 @@ class GameView(private val primaryStage: Stage, private val viewModel: GameViewM
     data class FieldCanvasSize(val width:Double, val height:Double)
     private fun calculateViewCanvasCoordinate(coordinate: Coordinate):CanvasCoordinate =
         CanvasCoordinate(
-            WIDTH.toDouble()/fieldWidthInCells*(coordinate.X),
+            WIDTH.toDouble()/fieldWidthInCells*(coordinate.x),
             HEIGHT.toDouble()/fieldHeightInCells*(coordinate.y)
         )
     private fun calculateFieldCanvasSize()=FieldCanvasSize(WIDTH.toDouble()/fieldWidthInCells,HEIGHT.toDouble()/fieldHeightInCells)

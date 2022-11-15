@@ -1,5 +1,8 @@
 package hu.blum.model
 
-data class Coordinate(val X: Int,val y: Int)
-class Field (val coordinate: Coordinate, var type: FieldType){
+data class Field (var type:FieldType, var age:Int){
+    fun increaseAge(){
+        if(age<100)
+            age++
+    }
 }
