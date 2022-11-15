@@ -1,5 +1,5 @@
 package hu.blum.model
 
-class Field {
-
+data class Coordinate(val X: Int,val y: Int)
+class Field (val coordinate: Coordinate, var type: FieldType){
 }
