@@ -48,19 +48,21 @@ class GameView(private val primaryStage: Stage, private val viewModel: GameViewM
         //root.children.add(canvas)
 
         val top = HBox()
-        val btnPause = Button("start")
-        val btnReset = Button("reset")
+        val btnPause = Button("pause")
+        //val btnReset = Button("reset")
         val btnStep = Button("step")
 
         btnStep.onAction = EventHandler { viewModel.step()}
+        btnPause.onAction = EventHandler { viewModel.pause() }
+
 
         btnPause.padding = Insets(0.0,10.0,0.0,10.0)
-        btnReset.padding = Insets(0.0,10.0,0.0,10.0)
+        //btnReset.padding = Insets(0.0,10.0,0.0,10.0)
         btnStep.padding = Insets(0.0,10.0,0.0,10.0)
         top.padding= Insets(10.0)
         top.spacing = 10.0
         top.children.add(btnPause)
-        top.children.add(btnReset)
+        //top.children.add(btnReset)
         top.children.add(btnStep)
 
         val mainLayout: BorderPane = BorderPane()

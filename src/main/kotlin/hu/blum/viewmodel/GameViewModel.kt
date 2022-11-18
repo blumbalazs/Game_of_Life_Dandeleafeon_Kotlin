@@ -19,6 +19,7 @@ class GameViewModel {
             step()
         }
     }
+    private var running:Boolean = false
 
     private var board: Array<Array<Field>> = Array(boardHeight){Array(boardWidth){ Field(FieldType.DEAD_CELL,0) } }
 
@@ -121,12 +122,16 @@ class GameViewModel {
         return n
     }
 
-    fun start(){
-        timer.scheduleAtFixedRate(refresh,0,1000)
-    }
 
-    fun stop(){
-        timer.cancel()
+    fun pause(){
+        if (running){
+            timer.cancel()
+        }
+        else{
+            this.timer = Timer(true)
+            this.timer.scheduleAtFixedRate(refresh,0,1000)
+        }
+        running = !running
     }
 
     private fun invalidateViews(){
