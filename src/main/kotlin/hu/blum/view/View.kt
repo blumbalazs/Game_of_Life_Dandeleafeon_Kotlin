@@ -1,9 +1,9 @@
 package hu.blum.view
 
-import com.example.getResource
+
 import hu.blum.viewmodel.ViewModel
-import hu.blum.util.gameStateListener
 import hu.blum.model.FieldType
+import hu.blum.util.getResource
 import javafx.application.Platform
 import javafx.event.EventHandler
 import javafx.geometry.Insets
@@ -16,10 +16,11 @@ import javafx.scene.image.Image
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Text
 import javafx.stage.Stage
 import java.awt.Toolkit
 
-class View(private val primaryStage: Stage): gameStateListener {
+class View(private val primaryStage: Stage): GameStateListener {
 
     companion object{
         private val WIDTH:Double = Toolkit.getDefaultToolkit().screenSize.width/1920.0*800
@@ -36,8 +37,7 @@ class View(private val primaryStage: Stage): gameStateListener {
     private val debug = false
 
     fun tickAndRender(currentNanoTime: Long) {
-        // the time elapsed since the last frame, in nanoseconds
-        // can be used for physics calculation, etc
+
         val elapsedNanos = currentNanoTime - lastFrameTime
         lastFrameTime = currentNanoTime
 
@@ -64,6 +64,7 @@ class View(private val primaryStage: Stage): gameStateListener {
     }
 
     private lateinit var btnPause: Button
+    private lateinit var resultText:Text
 
     private fun createWindow(){
         primaryStage.title = "Dandelifeon simulation"
@@ -87,7 +88,8 @@ class View(private val primaryStage: Stage): gameStateListener {
         btnPause = Button("Start")
         //val btnReset = Button("reset")
         val btnStep = Button("step")
-
+        resultText = Text("")
+        val lastResult = Text("Last result:")
         btnStep.onAction = EventHandler { viewModel.step() }
         btnPause.onAction = EventHandler {
             if(viewModel.isClockStopped()){
@@ -107,6 +109,8 @@ class View(private val primaryStage: Stage): gameStateListener {
         top.spacing = 10.0
         top.children.add(btnPause)
         top.children.add(btnStep)
+        top.children.add(lastResult)
+        top.children.add(resultText)
 
         val mainLayout = BorderPane()
         mainLayout.top = HBox(top)
@@ -203,16 +207,18 @@ class View(private val primaryStage: Stage): gameStateListener {
     }
     class FieldCanvasSize(val width:Double, val height:Double)
     class Coordinate(val x: Double,val y: Double)
+    fun calculateCanvasCoordinateFromOriginalCoordinate(x: Int,y: Int): Coordinate {return Coordinate(
+        WIDTH / viewModel.boardWidth * x,
+        HEIGHT / viewModel.boardHeight * y)
+    }
     override fun onGameEnded() {
+        resultText.text = " ${viewModel.resultPercentage} % (${viewModel.lastBest}/${8*100*60})"
         Platform.runLater {
             btnPause.text = "Start"
         }
         viewModel.restart()
     }
 
-    fun calculateCanvasCoordinateFromOriginalCoordinate(x: Int,y: Int): Coordinate {return Coordinate(
-        WIDTH / viewModel.boardWidth * x,
-        HEIGHT / viewModel.boardHeight * y)
-    }
+
 
 }

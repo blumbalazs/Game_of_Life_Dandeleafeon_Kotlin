@@ -4,7 +4,7 @@ import hu.blum.clock.SecondTimer
 import hu.blum.clock.TimerState
 import hu.blum.model.FieldType
 import hu.blum.model.GameState
-import hu.blum.util.gameStateListener
+import hu.blum.view.GameStateListener
 
 class ViewModel {
 
@@ -17,8 +17,11 @@ class ViewModel {
 
     private val timer = SecondTimer(::step)
 
-    lateinit var listener: gameStateListener
-    val lastBest = 0
+    lateinit var listener: GameStateListener
+
+    var lastBest = 0
+    val resultPercentage
+        get() = lastBest.toDouble()/(8*100*60)*100
 
     init {
         initialiseBoard()
@@ -32,9 +35,6 @@ class ViewModel {
     fun initialiseBoard(){
         addWalls()
 
-        gameState.changeStatus(3,1,FieldType.LIVE_CELL)
-        gameState.changeStatus(3,2,FieldType.LIVE_CELL)
-        gameState.changeStatus(3,3,FieldType.LIVE_CELL)
 
         gameState.changeStatus(boardWidth/2,boardHeight/2,FieldType.DANDELIFEON)
         gameState.changeStatus(boardWidth/2-1,boardHeight/2-1,FieldType.FINNISH)
@@ -86,6 +86,9 @@ class ViewModel {
 
         if(gameEnded){
             timer.stop()
+
+            lastBest = gameState.generatedPoints()
+
             listener.onGameEnded()
         }
 
@@ -94,5 +97,8 @@ class ViewModel {
     fun isClockStopped():Boolean{
         return timer.state == TimerState.STOPPED
     }
+
+
+
 
 }

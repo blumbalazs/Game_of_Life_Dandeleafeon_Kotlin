@@ -35,13 +35,13 @@ class GameState(private val width:Int, private val height:Int) {
 
         state = newState
 
-        return isGameEnded()
+        return ended
     }
 
     fun calculateEvolve(x:Int,y:Int):Deferred<FieldState> = GlobalScope.async{
         val currentCell = state[y][x]
 
-        if (currentCell.status != FieldType.LIVE_CELL && currentCell.status != FieldType.DEAD_CELL){
+        if (currentCell.status != FieldType.LIVE_CELL && currentCell.status != FieldType.DEAD_CELL && currentCell.status != FieldType.FINNISH){
             return@async currentCell
         }
 
@@ -64,8 +64,6 @@ class GameState(private val width:Int, private val height:Int) {
             else -> 0
         }
 
-        if(currentCell.age == 20)
-            ended = true
 
         if ((currentCell.status == FieldType.LIVE_CELL) && (aliveNeighbours < 2))
             return@async FieldState(FieldType.DEAD_CELL)
@@ -73,8 +71,13 @@ class GameState(private val width:Int, private val height:Int) {
         else if ((currentCell.status == FieldType.LIVE_CELL) && (aliveNeighbours > 3))
             return@async FieldState(FieldType.DEAD_CELL)
 
-        else if ((currentCell.status == FieldType.DEAD_CELL) && (aliveNeighbours == 3)) {
-            return@async FieldState(FieldType.LIVE_CELL, 100.coerceAtMost(maxAge+1));
+        else if ((currentCell.status == FieldType.DEAD_CELL || currentCell.status == FieldType.FINNISH) && (aliveNeighbours == 3)) {
+            if(currentCell.status == FieldType.FINNISH){
+                ended = true
+                return@async FieldState(FieldType.FINNISH, 100.coerceAtMost(maxAge+1));
+            }
+            else
+                return@async FieldState(FieldType.LIVE_CELL, 100.coerceAtMost(maxAge+1));
         }
 
         else {
@@ -83,8 +86,17 @@ class GameState(private val width:Int, private val height:Int) {
         }
     }
 
-    private fun isGameEnded():Boolean{
-        return ended
+    fun generatedPoints():Int{
+        var points = 0;
+
+        for (y in state.indices){
+            for( x in state[y].indices){
+                if(state[y][x].status == FieldType.FINNISH)
+                    points+= state[y][x].age*60
+            }
+        }
+
+        return points
     }
 
 
