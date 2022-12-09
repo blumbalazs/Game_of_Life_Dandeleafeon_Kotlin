@@ -1,9 +1,9 @@
 package hu.blum.view
 
 
-import hu.blum.viewmodel.ViewModel
 import hu.blum.model.FieldType
 import hu.blum.util.getResource
+import hu.blum.viewmodel.ViewModel
 import javafx.application.Platform
 import javafx.event.EventHandler
 import javafx.geometry.Insets
@@ -185,7 +185,7 @@ class View(private val primaryStage: Stage): GameStateListener {
             fieldSize.height)
 
         graphicsContext.fill = Color.WHITE
-        graphicsContext.fillText(age.toString(), WIDTH / viewModel.boardWidth * (x) + viewModel.boardWidth/2, HEIGHT / viewModel.boardHeight * (y) + viewModel.boardHeight/2)
+        graphicsContext.fillText(age.toString(), WIDTH / viewModel.boardWidth * (x) + 1 , HEIGHT / viewModel.boardHeight * (y) + viewModel.boardHeight/2)
     }
     private fun drawWall(x:Int, y:Int){
         graphicsContext.fill= Color.BLACK
