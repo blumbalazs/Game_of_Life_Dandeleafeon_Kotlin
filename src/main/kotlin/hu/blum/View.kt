@@ -18,19 +18,42 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import java.awt.Toolkit
+import java.lang.reflect.Field
 
-class View(private val primaryStage: Stage): onUpdateListener {
+class View(private val primaryStage: Stage){
 
     companion object{
         private val WIDTH:Double = Toolkit.getDefaultToolkit().screenSize.width/1920.0*800
         private val HEIGHT:Double = WIDTH
     }
     private var lastFrameTime: Long = System.nanoTime()
-    private val viewModel = ViewModel().also { it.view = this }
+    private val viewModel = ViewModel()
     private lateinit var graphicsContext: GraphicsContext
     fun show(){
         createWindow()
-        onUpdate()
+    }
+
+
+    private val debug = false
+
+    fun tickAndRender(currentNanoTime: Long) {
+        // the time elapsed since the last frame, in nanoseconds
+        // can be used for physics calculation, etc
+        val elapsedNanos = currentNanoTime - lastFrameTime
+        lastFrameTime = currentNanoTime
+
+        clearBoard()
+        //drawBoard()
+        drawEntities()
+
+        if(debug){
+            // display crude fps counter
+            val elapsedMs = elapsedNanos / 1_000_000
+            if (elapsedMs != 0L) {
+                graphicsContext.fill = Color.WHITE
+                graphicsContext.fillText("${1000 / elapsedMs} fps", 10.0, 10.0)
+            }
+        }
     }
 
 
@@ -57,7 +80,6 @@ class View(private val primaryStage: Stage): onUpdateListener {
         }
 
         graphicsContext = canvas.graphicsContext2D
-        //root.children.add(canvas)
 
         val top = HBox()
         val btnPause = Button("Start")
@@ -94,14 +116,6 @@ class View(private val primaryStage: Stage): onUpdateListener {
         primaryStage.show()
     }
 
-    override fun onUpdate() {
-        Platform.runLater{
-            clearBoard()
-            drawBoard()
-            drawEntities()
-        }
-    }
-
     fun canvasClicked(x:Int,y:Int){
         viewModel.cycleField(x,y)
 
@@ -131,10 +145,12 @@ class View(private val primaryStage: Stage): onUpdateListener {
         val state = viewModel.gameState.statuses
 
         for (i in state.indices){
+
             when(state[i]){
                 FieldType.LIVE_CELL.ordinal-> drawCell(i%viewModel.boardWidth,i/viewModel.boardHeight)
                 FieldType.DANDELIFEON.ordinal-> drawDandelifeon(i%viewModel.boardWidth,i/viewModel.boardHeight)
                 FieldType.WALL.ordinal-> drawWall(i%viewModel.boardWidth,i/viewModel.boardHeight)
+                FieldType.FINNISH.ordinal -> drawFinal(i%viewModel.boardWidth,i/viewModel.boardHeight)
                 else->{}
             }
         }
@@ -157,6 +173,14 @@ class View(private val primaryStage: Stage): onUpdateListener {
     }
     private fun drawWall(x:Int, y:Int){
         graphicsContext.fill= Color.BLACK
+        graphicsContext.fillRect(
+            WIDTH / viewModel.boardWidth * (x),
+            HEIGHT / viewModel.boardHeight * (y),
+            fieldSize.width,
+            fieldSize.height)
+    }
+    private fun drawFinal(x:Int,y:Int){
+        graphicsContext.fill= Color.RED
         graphicsContext.fillRect(
             WIDTH / viewModel.boardWidth * (x),
             HEIGHT / viewModel.boardHeight * (y),

@@ -23,7 +23,7 @@ class SecondTimer(val task:()->Unit) {
 
         }
 
-        timer.scheduleAtFixedRate(taskToRun,0,1000)
+        timer.scheduleAtFixedRate(taskToRun,0,500)
 
         state = TimerState.RUNNING
     }

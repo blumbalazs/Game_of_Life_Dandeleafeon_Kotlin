@@ -4,5 +4,6 @@ enum class FieldType {
     DEAD_CELL,
     LIVE_CELL,
     WALL,
+    FINNISH,
     DANDELIFEON
 }

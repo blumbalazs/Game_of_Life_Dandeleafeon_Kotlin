@@ -2,10 +2,8 @@ package hu.blum
 
 import hu.blum.clock.SecondTimer
 import hu.blum.clock.TimerState
-import hu.blum.model.FieldState
 import hu.blum.model.FieldType
 import hu.blum.model.GameState
-import kotlinx.coroutines.*
 
 class ViewModel {
 
@@ -14,10 +12,11 @@ class ViewModel {
     val boardHeight
         get() = 27
 
-    lateinit var view: View
     var gameState = GameState(boardWidth,boardHeight)
 
     private val timer = SecondTimer(::step)
+
+    val lastBest = 0
 
     init {
         addWalls()
@@ -25,6 +24,16 @@ class ViewModel {
         gameState.changeStatus(3,1,FieldType.LIVE_CELL)
         gameState.changeStatus(3,2,FieldType.LIVE_CELL)
         gameState.changeStatus(3,3,FieldType.LIVE_CELL)
+
+        gameState.changeStatus(boardWidth/2,boardHeight/2,FieldType.DANDELIFEON)
+        gameState.changeStatus(boardWidth/2-1,boardHeight/2-1,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2-1,boardHeight/2,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2-1,boardHeight/2+1,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2+1,boardHeight/2-1,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2+1,boardHeight/2,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2+1,boardHeight/2+1,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2,boardHeight/2+1,FieldType.FINNISH)
+        gameState.changeStatus(boardWidth/2,boardHeight/2-1,FieldType.FINNISH)
 
     }
 
@@ -59,13 +68,11 @@ class ViewModel {
             FieldType.WALL.ordinal->{gameState.changeStatus(x,y,FieldType.DEAD_CELL)}
             else->{}
         }
-        view.onUpdate()
     }
 
     fun step(){
 
         gameState.evolve()
-        view.onUpdate()
 
     }
     fun getState():IntArray{
