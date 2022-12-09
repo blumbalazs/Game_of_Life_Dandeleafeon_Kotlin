@@ -1,9 +1,9 @@
-package hu.blum
+package hu.blum.view
 
-import com.example.Game
 import com.example.getResource
+import hu.blum.viewmodel.ViewModel
+import hu.blum.util.gameStateListener
 import hu.blum.model.FieldType
-import javafx.animation.AnimationTimer
 import javafx.application.Platform
 import javafx.event.EventHandler
 import javafx.geometry.Insets
@@ -18,16 +18,15 @@ import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import java.awt.Toolkit
-import java.lang.reflect.Field
 
-class View(private val primaryStage: Stage){
+class View(private val primaryStage: Stage): gameStateListener {
 
     companion object{
         private val WIDTH:Double = Toolkit.getDefaultToolkit().screenSize.width/1920.0*800
         private val HEIGHT:Double = WIDTH
     }
     private var lastFrameTime: Long = System.nanoTime()
-    private val viewModel = ViewModel()
+    private val viewModel = ViewModel().also { it.listener = this }
     private lateinit var graphicsContext: GraphicsContext
     fun show(){
         createWindow()
@@ -57,12 +56,14 @@ class View(private val primaryStage: Stage){
     }
 
 
-    private val fieldSize:FieldCanvasSize by lazy{
+    private val fieldSize: FieldCanvasSize by lazy{
         FieldCanvasSize(
             (WIDTH / viewModel.boardWidth ) ,
             (HEIGHT / viewModel.boardHeight)
         )
     }
+
+    private lateinit var btnPause: Button
 
     private fun createWindow(){
         primaryStage.title = "Dandelifeon simulation"
@@ -70,9 +71,10 @@ class View(private val primaryStage: Stage){
         val root = Group()
         val mainScene = Scene(root)
 
-        val canvas = Canvas(WIDTH,HEIGHT)
+        val canvas = Canvas(WIDTH, HEIGHT)
 
         canvas.setOnMouseClicked {
+
             canvasClicked(
                 (it.x/(canvas.width / viewModel.boardWidth)).toInt(),
                 (it.y/(canvas.height / viewModel.boardHeight)).toInt()
@@ -82,7 +84,7 @@ class View(private val primaryStage: Stage){
         graphicsContext = canvas.graphicsContext2D
 
         val top = HBox()
-        val btnPause = Button("Start")
+        btnPause = Button("Start")
         //val btnReset = Button("reset")
         val btnStep = Button("step")
 
@@ -122,71 +124,95 @@ class View(private val primaryStage: Stage){
     }
 
     private fun clearBoard(){
-        graphicsContext.clearRect(0.0,0.0,WIDTH,HEIGHT)
+        graphicsContext.clearRect(0.0,0.0, WIDTH, HEIGHT)
     }
     private fun drawBoard(){
         graphicsContext.lineWidth = 0.5
 
         for (i in 0 .. viewModel.boardWidth){
-            graphicsContext.moveTo(WIDTH/viewModel.boardHeight*i,0.0)
-            graphicsContext.lineTo(WIDTH/viewModel.boardHeight*i,HEIGHT)
+            graphicsContext.moveTo(WIDTH /viewModel.boardHeight*i,0.0)
+            graphicsContext.lineTo(WIDTH /viewModel.boardHeight*i, HEIGHT)
             graphicsContext.stroke()
 
         }
         for (i in 0 .. viewModel.boardHeight){
-            graphicsContext.moveTo(0.0,HEIGHT/viewModel.boardWidth*i)
-            graphicsContext.lineTo(WIDTH,HEIGHT/viewModel.boardWidth*i)
+            graphicsContext.moveTo(0.0, HEIGHT /viewModel.boardWidth*i)
+            graphicsContext.lineTo(WIDTH, HEIGHT /viewModel.boardWidth*i)
             graphicsContext.stroke()
 
         }
     }
 
     private fun drawEntities(){
-        val state = viewModel.gameState.statuses
+        val state = viewModel.gameState.state
 
-        for (i in state.indices){
 
-            when(state[i]){
-                FieldType.LIVE_CELL.ordinal-> drawCell(i%viewModel.boardWidth,i/viewModel.boardHeight)
-                FieldType.DANDELIFEON.ordinal-> drawDandelifeon(i%viewModel.boardWidth,i/viewModel.boardHeight)
-                FieldType.WALL.ordinal-> drawWall(i%viewModel.boardWidth,i/viewModel.boardHeight)
-                FieldType.FINNISH.ordinal -> drawFinal(i%viewModel.boardWidth,i/viewModel.boardHeight)
-                else->{}
+        for (y in state.indices){
+            for (x in state[y].indices){
+                when(state[y][x].status){
+                    FieldType.LIVE_CELL-> drawCell(x,y,state[y][x].age)
+                    FieldType.DANDELIFEON-> drawDandelifeon(x,y)
+                    FieldType.WALL-> drawWall(x,y)
+                    FieldType.FINNISH -> drawFinal(x,y)
+                    else->{}
+                }
             }
         }
+
     }
 
     private fun drawDandelifeon(x:Int, y:Int){
+        val coordinate = calculateCanvasCoordinateFromOriginalCoordinate(x,y)
         graphicsContext.drawImage(
             Image(getResource("/Dandelifeon.png")),
-            WIDTH / viewModel.boardWidth * (x),
-            HEIGHT / viewModel.boardHeight * (y),
+            coordinate.x,
+            coordinate.y,
             fieldSize.width,
             fieldSize.height)
     }
-    private fun drawCell(x:Int, y:Int){
+
+    private fun drawCell(x:Int, y:Int,age:Int){
         graphicsContext.fill= Color.LIGHTSEAGREEN
-        graphicsContext.fillRect(WIDTH / viewModel.boardWidth * (x),
-            HEIGHT / viewModel.boardHeight * (y),
+        val coordinate = calculateCanvasCoordinateFromOriginalCoordinate(x,y)
+        graphicsContext.fillRect(
+            coordinate.x,
+            coordinate.y,
             fieldSize.width,
             fieldSize.height)
+
+        graphicsContext.fill = Color.WHITE
+        graphicsContext.fillText(age.toString(), WIDTH / viewModel.boardWidth * (x) + viewModel.boardWidth/2, HEIGHT / viewModel.boardHeight * (y) + viewModel.boardHeight/2)
     }
     private fun drawWall(x:Int, y:Int){
         graphicsContext.fill= Color.BLACK
+        val coordinate = calculateCanvasCoordinateFromOriginalCoordinate(x,y)
         graphicsContext.fillRect(
-            WIDTH / viewModel.boardWidth * (x),
-            HEIGHT / viewModel.boardHeight * (y),
+            coordinate.x,
+            coordinate.y,
             fieldSize.width,
             fieldSize.height)
     }
     private fun drawFinal(x:Int,y:Int){
         graphicsContext.fill= Color.RED
+        val coordinate = calculateCanvasCoordinateFromOriginalCoordinate(x,y)
         graphicsContext.fillRect(
-            WIDTH / viewModel.boardWidth * (x),
-            HEIGHT / viewModel.boardHeight * (y),
+            coordinate.x,
+            coordinate.y,
             fieldSize.width,
             fieldSize.height)
     }
-    data class FieldCanvasSize(val width:Double, val height:Double)
+    class FieldCanvasSize(val width:Double, val height:Double)
+    class Coordinate(val x: Double,val y: Double)
+    override fun onGameEnded() {
+        Platform.runLater {
+            btnPause.text = "Start"
+        }
+        viewModel.restart()
+    }
+
+    fun calculateCanvasCoordinateFromOriginalCoordinate(x: Int,y: Int): Coordinate {return Coordinate(
+        WIDTH / viewModel.boardWidth * x,
+        HEIGHT / viewModel.boardHeight * y)
+    }
 
 }

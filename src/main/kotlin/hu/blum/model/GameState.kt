@@ -1,38 +1,48 @@
 package hu.blum.model
 
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 
 class GameState(private val width:Int, private val height:Int) {
 
-    var statuses = IntArray(height*width){ FieldType.DEAD_CELL.ordinal }
-    var ages = IntArray(height*width){ 0 }
+    var state = Array(height){Array(width){ FieldState()} }
+
     fun changeStatus(x:Int,y:Int,type:FieldType){
-        statuses[y*height+x] = type.ordinal
+        state[y][x] = FieldState(type)
     }
 
-    fun evolve(){
+    private var ended = false
+
+    fun evolve():Boolean{
         val temp = IntArray(height*width){ FieldType.DEAD_CELL.ordinal }
+        val tempAge = IntArray(height*width){ FieldType.DEAD_CELL.ordinal }
+        val newState = Array(height){Array(width){ FieldState()} }
         runBlocking {
             for (y in 0 until height) {
                 for (x in 0 until width) {
 
-                    temp[y * height + x] = calculateEvolve(x, y).await()
+                    val result = calculateEvolve(x, y).await()
+
+                    temp[y * height + x] = result.status.ordinal
+                    tempAge[y * height + x] = result.age
+                    newState[y][x] = result
 
                 }
             }
         }
 
-        statuses = temp
+        state = newState
+
+        return isGameEnded()
     }
 
-    fun calculateEvolve(x:Int,y:Int) = GlobalScope.async{
-        val currentStatus = getStatus(x,y)
+    fun calculateEvolve(x:Int,y:Int):Deferred<FieldState> = GlobalScope.async{
+        val currentCell = state[y][x]
 
-        if (currentStatus != FieldType.LIVE_CELL.ordinal && currentStatus != FieldType.DEAD_CELL.ordinal){
-            return@async currentStatus
-
+        if (currentCell.status != FieldType.LIVE_CELL && currentCell.status != FieldType.DEAD_CELL){
+            return@async currentCell
         }
 
         var aliveNeighbours = 0
@@ -40,39 +50,42 @@ class GameState(private val width:Int, private val height:Int) {
         for (i in -1 .. 1){
             for (j in -1 .. 1){
                 if ((y+i in 0 until height) && (x+j in 0 until width)){
-                    aliveNeighbours += when(statuses[(y+i)*height+x+j]){
-                        FieldType.LIVE_CELL.ordinal -> 1
+                    aliveNeighbours += when(state[y+i][x+j].status){
+                        FieldType.LIVE_CELL -> 1
                         else -> 0
                     }
-                    maxAge = statuses[(y + i) * height + x + j].coerceAtLeast(maxAge)
+                    maxAge = state[y+i][x+j].age.coerceAtLeast((maxAge))
                 }
 
             }
         }
-        aliveNeighbours -= when(currentStatus){
-            FieldType.LIVE_CELL.ordinal -> 1
+        aliveNeighbours -= when(currentCell.status){
+            FieldType.LIVE_CELL -> 1
             else -> 0
         }
 
+        if(currentCell.age == 20)
+            ended = true
 
-        if ((currentStatus == FieldType.LIVE_CELL.ordinal) && (aliveNeighbours < 2))
-            return@async FieldType.DEAD_CELL.ordinal
+        if ((currentCell.status == FieldType.LIVE_CELL) && (aliveNeighbours < 2))
+            return@async FieldState(FieldType.DEAD_CELL)
 
-        else if ((currentStatus == FieldType.LIVE_CELL.ordinal) && (aliveNeighbours > 3))
-            return@async FieldType.DEAD_CELL.ordinal
+        else if ((currentCell.status == FieldType.LIVE_CELL) && (aliveNeighbours > 3))
+            return@async FieldState(FieldType.DEAD_CELL)
 
-        else if ((currentStatus == FieldType.DEAD_CELL.ordinal) && (aliveNeighbours == 3)) {
-            ages[y*height+x] = 100.coerceAtMost(maxAge)
-            return@async FieldType.LIVE_CELL.ordinal;
+        else if ((currentCell.status == FieldType.DEAD_CELL) && (aliveNeighbours == 3)) {
+            return@async FieldState(FieldType.LIVE_CELL, 100.coerceAtMost(maxAge+1));
         }
 
         else {
-            ages[y*height+x] = 100.coerceAtMost(ages[y * height + x])
-            return@async currentStatus
+
+            return@async FieldState(currentCell.status,if(currentCell.status==FieldType.LIVE_CELL) 100.coerceAtMost(currentCell.age+1) else 0)
         }
     }
 
-    fun getStatus(x:Int,y:Int) = statuses[y*height+x]
+    private fun isGameEnded():Boolean{
+        return ended
+    }
 
 
 }

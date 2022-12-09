@@ -1,9 +1,10 @@
-package hu.blum
+package hu.blum.viewmodel
 
 import hu.blum.clock.SecondTimer
 import hu.blum.clock.TimerState
 import hu.blum.model.FieldType
 import hu.blum.model.GameState
+import hu.blum.util.gameStateListener
 
 class ViewModel {
 
@@ -16,9 +17,19 @@ class ViewModel {
 
     private val timer = SecondTimer(::step)
 
+    lateinit var listener: gameStateListener
     val lastBest = 0
 
     init {
+        initialiseBoard()
+    }
+
+    fun restart(){
+        gameState = GameState(boardWidth,boardHeight)
+        initialiseBoard()
+    }
+
+    fun initialiseBoard(){
         addWalls()
 
         gameState.changeStatus(3,1,FieldType.LIVE_CELL)
@@ -34,7 +45,6 @@ class ViewModel {
         gameState.changeStatus(boardWidth/2+1,boardHeight/2+1,FieldType.FINNISH)
         gameState.changeStatus(boardWidth/2,boardHeight/2+1,FieldType.FINNISH)
         gameState.changeStatus(boardWidth/2,boardHeight/2-1,FieldType.FINNISH)
-
     }
 
     private fun addWalls(){
@@ -62,21 +72,23 @@ class ViewModel {
     }
 
     fun cycleField(x:Int,y:Int){
-        when(gameState.getStatus(x,y)){
-            FieldType.DEAD_CELL.ordinal->{gameState.changeStatus(x,y,FieldType.LIVE_CELL)}
-            FieldType.LIVE_CELL.ordinal->{gameState.changeStatus(x,y,FieldType.WALL)}
-            FieldType.WALL.ordinal->{gameState.changeStatus(x,y,FieldType.DEAD_CELL)}
+        when(gameState.state[y][x].status){
+            FieldType.DEAD_CELL->{gameState.changeStatus(x,y,FieldType.LIVE_CELL)}
+            FieldType.LIVE_CELL->{gameState.changeStatus(x,y,FieldType.WALL)}
+            FieldType.WALL->{gameState.changeStatus(x,y,FieldType.DEAD_CELL)}
             else->{}
         }
     }
 
     fun step(){
 
-        gameState.evolve()
+        val gameEnded = gameState.evolve()
 
-    }
-    fun getState():IntArray{
-        return gameState.statuses
+        if(gameEnded){
+            timer.stop()
+            listener.onGameEnded()
+        }
+
     }
 
     fun isClockStopped():Boolean{

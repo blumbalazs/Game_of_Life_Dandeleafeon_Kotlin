@@ -1,9 +1,8 @@
 package hu.blum
 
-import com.example.Game
+import hu.blum.view.View
 import javafx.animation.AnimationTimer
 import javafx.application.Application
-import javafx.scene.paint.Color
 import javafx.stage.Stage
 
 class Game: Application() {
