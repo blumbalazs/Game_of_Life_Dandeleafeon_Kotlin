@@ -87,7 +87,7 @@ class View(private val primaryStage: Stage): GameStateListener {
         val top = HBox()
         btnPause = Button("Start")
         //val btnReset = Button("reset")
-        val btnStep = Button("step")
+        val btnStep = Button("Step")
         resultText = Text("")
         val lastResult = Text("Last result:")
         btnStep.onAction = EventHandler { viewModel.step() }
